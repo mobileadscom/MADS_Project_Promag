@@ -4,6 +4,6 @@ module.exports = {
     "import"
   ],
   rules: {
-    'class-methods-use-this': ["error", {"exceptMethods": ['render', 'style', 'events']}]
+    'class-methods-use-this': ["error", {"exceptMethods": ['render', 'style', 'events', 'generateUniqueId']}]
   }
 };

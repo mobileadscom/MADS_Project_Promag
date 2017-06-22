@@ -14,15 +14,20 @@
     "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.5.1",
     "copy-webpack-plugin": "^4.0.1",
+    "css-loader": "^0.28.4",
     "eslint": "^4.0.0",
     "eslint-config-airbnb-base": "^11.2.0",
     "eslint-friendly-formatter": "^3.0.0",
     "eslint-loader": "^1.8.0",
     "eslint-plugin-import": "^2.3.0",
     "friendly-errors-webpack-plugin": "^1.6.1",
+    "style-loader": "^0.18.2",
     "uglifyjs-webpack-plugin": "^0.4.3",
+    "url-loader": "^0.5.9",
     "webpack": "^2.6.1",
     "webpack-dev-server": "^2.4.5"
   },
-  "dependencies": {}
+  "dependencies": {
+    "swiper": "^3.4.2"
+  }
 }

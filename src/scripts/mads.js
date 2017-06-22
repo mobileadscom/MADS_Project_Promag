@@ -12,10 +12,10 @@ export default class Mads {
     } else if (constants.json) {
       this.json = constants.json;
     } else {
-      this.json = '/settings.json';
+      this.json = './settings.json';
     }
 
-    if (this.json.indexOf('/') === 0 || this.json.indexOf('https://') === 0 || this.json.indexOf('http://') === 0) {
+    if (this.json.indexOf('./') === 0 || this.json.indexOf('https://') === 0 || this.json.indexOf('http://') === 0) {
       const xhr = new XMLHttpRequest();
       xhr.onreadystatechange = () => {
         if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -23,7 +23,7 @@ export default class Mads {
             this.data = JSON.parse(xhr.responseText);
             this.loadAd();
           } else {
-            console.log('There was problem with the request.');
+            console.log('There was problem with the request.'); // eslint-disable-line
           }
         }
       };
@@ -76,7 +76,7 @@ export default class Mads {
       this.tags = {};
     }
 
-    this.id = Mads.generateUniqueId();
+    this.id = this.generateUniqueId();
     this.tracked = [];
     this.trackedEngagementType = [];
     this.engagementTypeExclude = [];
@@ -100,6 +100,7 @@ export default class Mads {
               this.elems[elem.id] = elem;
             }
           });
+          if (this.postRender) this.postRender();
           this.events();
           obs.disconnect();
         }
@@ -110,9 +111,9 @@ export default class Mads {
 
     obs.observe(this.content, config);
 
-    this.content.innerHTML = this.render();
+    this.content.innerHTML = this.render().replace(/src="/g, `src="${this.path}`);
 
-    const styles = this.style();
+    const styles = `body{padding:0;margin:0;} ${this.style()}`;
     if (typeof styles === 'string') {
       this.loadCSS(styles);
     } else {
@@ -120,7 +121,11 @@ export default class Mads {
     }
   }
 
-  static generateUniqueId() {
+  resolve(path) {
+    return this.path + path;
+  }
+
+  generateUniqueId() {
     return +new Date();
   }
 
@@ -133,15 +138,13 @@ export default class Mads {
       }
     });
 
-    console.log(resultTags);
-
     return resultTags;
   }
 
   linkOpener(url) {
     let tmpUrl = url;
     if (typeof tmpUrl !== 'undefined' && tmpUrl !== '') {
-      if (typeof this.ct !== 'undefined' && this.ct !== '') {
+      if (typeof this.ct !== 'undefined' && this.ct !== '' && this.ct.length !== 0) {
         tmpUrl = this.ct + encodeURIComponent(tmpUrl);
         this.url = tmpUrl;
       }
@@ -242,7 +245,7 @@ export default class Mads {
           link.setAttribute('rel', 'stylesheet');
           this.head.appendChild(link);
         } else {
-          const cssText = url.replace(/(<br>|\s)/g, '');
+          const cssText = url.replace(/(<br>)/g, '');
           const style = document.createElement('style');
           style.innerText = cssText;
           this.head.appendChild(style);
