@@ -5,7 +5,7 @@ import 'swiper/dist/css/swiper.min.css';
 import Swiper from 'swiper';
 
 import Mads from './scripts/mads';
-import { fadeOutIn, fadeIn } from './scripts/utils';
+import { fadeOutIn, fadeIn, fadeOut } from './scripts/utils';
 
 class AdUnit extends Mads {
   constructor() {
@@ -36,12 +36,21 @@ class AdUnit extends Mads {
       <img src="img/klik%20untuk%20isi%20pesan.png" alt="" id="message">
       <img src="img/klik%20upload%20fotoo.png" alt="" id="photo">
       <img src="img/klik%20nama%20kamu.png" alt="" id="name">
-      <input type="file" id="upload" style="display: none;" />
+      <input type="file" id="upload" style="display: none;"/>
     </div>
     <div id="shareContainer">
       <img src="img/CTA%20share.png" alt="" id="share">
       <img src="img/twitter%20button.png" alt="" id="twitShare">
       <img src="img/FB%20button.png" alt="" id="fbShare">
+      <img src="img/whatsapp%20button.png" alt="" id="whatsAppShare">
+    </div>
+    <div id="formContainer">
+      <form id="form">
+        <input type="text" placeholder="Nama*" name="nama" required>
+        <input type="email" placeholder="Email*" name="email" required>
+        <input type="text" placeholder="Kota*" name="kota" required>
+        <input type="image" src="${this.resolve('img/submit%20button.png')}">
+      </form>
     </div>
     <img src="img/pilih%20button.png" alt="" id="choose">
   </div>
@@ -74,12 +83,11 @@ class AdUnit extends Mads {
     const bg = new Image();
     bg.src = this.resolve(`img/bg${bgIndex}.png`);
     bg.onload = () => {
-      this.ctx.drawImage(bg, 0, 0);
       const product = new Image();
       product.src = this.resolve('img/produk.png');
       product.onload = () => {
+        this.ctx.drawImage(bg, 0, 0);
         this.ctx.drawImage(product, 0, 480 - 129);
-
         if (message) {
           this.ctx.font = '13px "Lucida Sans Unicode", "Lucida Grande", sans-serif';
           this.ctx.fillStyle = 'white';
@@ -98,8 +106,14 @@ class AdUnit extends Mads {
           this.ctx.save();
           this.ctx.translate(this.elems.workspace.width / 2, this.elems.workspace.height / 2);
           this.ctx.rotate((-7 * Math.PI) / 180);
-          this.ctx.drawImage(photo, -135, -5, 90, 90);
-          this.ctx.restore();
+          this.ctx.drawImage(photo, -135, -5, 88, 88);
+          const border = new Image();
+          border.src = this.resolve('img/frame%20border.png');
+          border.onload = () => {
+            this.ctx.fillStyle = 'white';
+            this.ctx.drawImage(border, -144, -15);
+            this.ctx.restore();
+          };
         }
       };
     };
@@ -123,6 +137,7 @@ class AdUnit extends Mads {
             spaceBetween: 1,
             free: true,
             onClick: (swiper) => {
+              this.tracker('E', 'change_bg');
               this.bgIndex = swiper.clickedIndex + 1;
               this.renderCtx(swiper.clickedIndex + 1);
             },
@@ -191,8 +206,41 @@ class AdUnit extends Mads {
       #share {
         display: block;
         position: relative;
-        left: 16px;
+        left: 49px;
         top: 2px;
+      }
+      
+      #formContainer {
+        width: 320px;
+        height: 480px;
+        position: absolute;
+        z-index: 11;
+        left: 0;
+        top: 0;
+        background: url(${this.resolve('img/BG%20form.png')});
+        display: none;
+      }
+      
+      #form {
+        position: absolute;
+        top: 163px;
+        width: 320px;
+        text-align: center;
+      }
+      
+      #formContainer input[type=text], #formContainer input[type=email] {
+        width: 200px;
+      }
+      
+      #formContainer input {
+        display: block;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 5px;
+        margin: 0 auto;
+        margin-bottom: 7px;
       }
       
       #message {
@@ -250,6 +298,19 @@ class AdUnit extends Mads {
         -webkit-align-items: center;
         align-items: center;
       }
+      
+      ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  color: #004609;
+}
+::-moz-placeholder { /* Firefox 19+ */
+  color: #004609;
+}
+:-ms-input-placeholder { /* IE 10+ */
+  color: #004609;
+}
+:-moz-placeholder { /* Firefox 18- */
+  color: #004609;
+}
       `];
   }
 
@@ -365,9 +426,9 @@ class AdUnit extends Mads {
 <body>
 <div class="container">
   <div class="jumbotron">
-    <div class="row marketing"><img src="${image}" alt="${title}">
-      <h1 class="title">${title}</h1>
-      <p class="description">${description}</p>
+    <div class="row marketing"><img src="${image}" alt="${title}" class="img-responsive">
+      <h1 class="title" style="word-wrap:break-word">${title}</h1>
+      <p class="description" style="word-wrap:break-word">${description}</p>
       <!--<p><strong>You'll be redirected to our site. Please wait for 5 seconds.</strong></p>--></div>
   </div>
 </div> <!-- Latest compiled and minified JavaScript -->
@@ -446,6 +507,7 @@ class AdUnit extends Mads {
   events() {
     this.elems.s1Button.addEventListener('click', () => {
       this.renderSecondScreen();
+      this.tracker('E', 'first_click');
       fadeOutIn(this.elems.firstScreen, this.elems.secondScreen);
     });
 
@@ -488,15 +550,53 @@ class AdUnit extends Mads {
     };
 
     this.elems.fbShare.onclick = () => {
-      const url = encodeURIComponent(this.urlToIndex);
-      this.linkOpener(`https://www.facebook.com/sharer/sharer.php?u=${url}`);
+      this.generateShortUrl(this.urlToIndex).then((url) => {
+        this.shortUrl = JSON.parse(url).id;
+        const tmpUrl = encodeURIComponent(this.shortUrl);
+
+        this.tracker('E', 'share_fb');
+        this.linkOpener(`https://www.facebook.com/sharer/sharer.php?u=${tmpUrl}`);
+      });
     };
 
     this.elems.twitShare.onclick = () => {
-      const referrer = encodeURIComponent('http://www.ahlinyalambung.com/id-id/');
-      const msg = encodeURIComponent(this.message);
-      const url = encodeURIComponent(this.urlToIndex);
-      this.linkOpener(`https://twitter.com/intent/tweet?text=${msg}&original_referrer=${referrer}&url=${url}&tw_p=tweetbutton&via=ahlinya_lambung`);
+      this.generateShortUrl(this.urlToIndex).then((url) => {
+        this.shortUrl = JSON.parse(url).id;
+
+        const referrer = encodeURIComponent('http://www.ahlinyalambung.com/id-id/');
+        const msg = encodeURIComponent(this.message);
+        const tmpUrl = encodeURIComponent(this.shortUrl);
+
+        this.tracker('E', 'share_twitter');
+        this.linkOpener(`https://twitter.com/intent/tweet?text=${msg}&original_referrer=${referrer}&url=${tmpUrl}&tw_p=tweetbutton&via=ahlinya_lambung`);
+      });
+    };
+
+    this.elems.whatsAppShare.onclick = () => {
+      this.generateShortUrl(this.urlToIndex).then((url) => {
+        this.shortUrl = JSON.parse(url).id;
+
+        const anchor = document.createElement('a');
+        anchor.href = `whatsapp://send?text=Kartu Lebaran dari Kerabatmu, oleh Promag Ahlinya Lambung ${this.shortUrl}`;
+        anchor.setAttribute('style', 'position: absolute; left: -999px; top: -999px; height: 0; width: 0;');
+
+        const event = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        });
+
+        const cancelled = !anchor.dispatchEvent(event);
+        if (cancelled) {
+          // A handler called preventDefault.
+          console.log('cancelled');
+        } else {
+          // None of the handlers called preventDefault.
+          console.log('not cancelled');
+        }
+
+        this.tracker('E', 'share_whatsapp');
+      });
     };
 
     this.elems.message.addEventListener('click', () => {
@@ -504,14 +604,36 @@ class AdUnit extends Mads {
       if (this.message) {
         this.renderCtx(this.bgIndex, this.message, this.name, this.photo);
         this.elems.message.style.display = 'none';
+        this.tracker('E', 'enter_msg');
       }
     });
+
+    this.elems.form.onsubmit = () => {
+      const form = this.elems.form;
+      // MW OFFDECK - let url = 'https://www.mobileads.com/api/save_lf?contactEmail=jeff@mobileads.com,dickale@imx.co.id,karima@imx.co.id&gotDatas=1&element=[{%22fieldname%22:%22text_1%22,%22value%22:%22nama%22,%22required%22:%22required%22},{%22fieldname%22:%22text_2%22,%22value%22:%22email_field%22,%22required%22:%22required%22},{%22fieldname%22:%22text_3%22,%22value%22:%22kota%22,%22required%22:%22required%22}]&user-id=2901&studio-id=420&tab-id=1&trackid=2258&referredURL=Sample%20Ad%20Unit&callback=leadGenCallback';
+      // MW BIDSTALK - let url = 'https://www.mobileads.com/api/save_lf?contactEmail=jeff@mobileads.com,dickale@imx.co.id,karima@imx.co.id&gotDatas=1&element=[{%22fieldname%22:%22text_1%22,%22value%22:%22nama%22,%22required%22:%22required%22},{%22fieldname%22:%22text_2%22,%22value%22:%22email_field%22,%22required%22:%22required%22},{%22fieldname%22:%22text_3%22,%22value%22:%22kota%22,%22required%22:%22required%22}]&user-id=2901&studio-id=422&tab-id=1&trackid=2259&referredURL=Sample%20Ad%20Unit&callback=leadGenCallback';
+      // IA BIDSTALK -
+      let url = 'https://www.mobileads.com/api/save_lf?contactEmail=jeff@mobileads.com,dickale@imx.co.id,karima@imx.co.id&gotDatas=1&element=[{%22fieldname%22:%22text_1%22,%22value%22:%22nama%22,%22required%22:%22required%22},{%22fieldname%22:%22text_2%22,%22value%22:%22email_field%22,%22required%22:%22required%22},{%22fieldname%22:%22text_3%22,%22value%22:%22kota%22,%22required%22:%22required%22}]&user-id=2901&studio-id=423&tab-id=1&trackid=2260&referredURL=http://www.mobileads.com/preview/mobile.html&callback=leadGenCallback';
+      this.generateShortUrl(this.urlToIndex).then((_url) => {
+        this.shortUrl = JSON.parse(_url).id;
+
+        url = url.replace(/nama/, `${form.nama.value} - ${this.shortUrl}`);
+        url = url.replace(/email_field/, form.email.value);
+        url = url.replace(/kota/, form.kota.value);
+        this.loadJS(url);
+        this.tracker('E', 'form_submit');
+        fadeOut(this.elems.formContainer);
+      });
+
+      return false;
+    };
 
     this.elems.name.addEventListener('click', () => {
       this.name = window.prompt('Nama', 'John Doe');
       if (this.name) {
         this.renderCtx(this.bgIndex, this.message, this.name, this.photo);
         this.elems.name.style.display = 'none';
+        this.tracker('E', 'enter_name');
       }
     });
 
@@ -520,12 +642,15 @@ class AdUnit extends Mads {
         case 1: {
           this.elems.fill.style.opacity = 1;
           this.stage = 2;
+          this.tracker('E', 'choose_bg');
           break;
         }
         case 2: {
           if (!this.message || !this.name || !this.photo) {
             window.alert('Please fill in the details.');
           } else {
+            this.tracker('E', 'finish_details');
+
             this.elems.choose.style.opacity = 0.5;
             this.elems.choose.style.pointerEvents = 'none';
             this.elems.workspace.toBlob((blob) => {
@@ -533,6 +658,7 @@ class AdUnit extends Mads {
                 this.elems.choose.style.display = 'none';
                 this.elems.pilihBg.style.display = 'none';
                 this.elems.pickContainer.style.display = 'none';
+                fadeIn(this.elems.formContainer);
                 fadeIn(this.elems.shareContainer);
               }).catch(() => {
                 this.elems.choose.style.opacity = 1;

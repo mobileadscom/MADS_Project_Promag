@@ -1,10 +1,12 @@
-/* global document window XMLHttpRequest cte MutationObserver mraid */
+/* global document window XMLHttpRequest MutationObserver mraid */
 import constants from './constants';
 
 export default class Mads {
   constructor() {
     this.body = document.getElementsByTagName('body')[0];
     this.head = document.getElementsByTagName('head')[0];
+
+    this.googleApiKey = 'AIzaSyCFHn5MNIYN-lGyTDTUYRAJM2fEKvHm-nE';
 
     // Get JSON value
     if (!constants.json && window.rma) {
@@ -13,25 +15,6 @@ export default class Mads {
       this.json = constants.json;
     } else {
       this.json = './settings.json';
-    }
-
-    if (this.json.indexOf('./') === 0 || this.json.indexOf('https://') === 0 || this.json.indexOf('http://') === 0) {
-      const xhr = new XMLHttpRequest();
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-          if (xhr.status === 200) {
-            this.data = JSON.parse(xhr.responseText);
-            this.loadAd();
-          } else {
-            console.log('There was problem with the request.'); // eslint-disable-line
-          }
-        }
-      };
-      xhr.open('GET', this.json, true);
-      xhr.send();
-    } else {
-      this.data = constants.json;
-      this.loadAd();
     }
 
     // Setup & get FET value
@@ -63,7 +46,7 @@ export default class Mads {
     if (constants.cte && window.rma) {
       this.cte = window.rma.cte;
     } else if (constants.cte) {
-      this.cte = cte;
+      this.cte = constants.cte;
     } else {
       this.cte = [];
     }
@@ -89,6 +72,25 @@ export default class Mads {
       }
     }
     this.elems = {};
+
+    if (typeof this.json === 'string' && (this.json.indexOf('./') === 0 || this.json.indexOf('https://') === 0 || this.json.indexOf('http://') === 0)) {
+      const xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            this.data = JSON.parse(xhr.responseText);
+            this.loadAd();
+          } else {
+            console.log('There was problem with the request.'); // eslint-disable-line
+          }
+        }
+      };
+      xhr.open('GET', this.json, true);
+      xhr.send();
+    } else {
+      this.data = constants.json;
+      this.loadAd();
+    }
   }
 
   loadAd() {
@@ -231,6 +233,28 @@ export default class Mads {
         };
       } catch (e) {
         reject(e);
+      }
+    });
+  }
+
+  generateShortUrl(url) {
+    return new Promise((resolve, reject) => {
+      if (this.shortUrl) {
+        resolve(JSON.stringify({ id: this.shortUrl }));
+      } else {
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `https://www.googleapis.com/urlshortener/v1/url?key=${this.googleApiKey}`);
+          xhr.setRequestHeader('content-type', 'application/json');
+          xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              resolve(xhr.responseText);
+            }
+          };
+          xhr.send(JSON.stringify({ longUrl: url }));
+        } catch (e) {
+          reject(e);
+        }
       }
     });
   }
